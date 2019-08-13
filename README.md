@@ -1,9 +1,11 @@
+# Background
+
 Shows an image of Vigo the Carpathian, whose eyes remain closed until "he" (the Kinect) spots a moving target, at which point they snap open, and then follow the target until that target moves off frame.
 
 This uses no skeleton tracking, just passive user identification and tracking. It is not perfect; Vigo is known to become fixated on walls and pillars, though he seems to lose interest in them easily when a person walks in front.
 
 
-== Getting it running ==
+# Getting it running
 
 1) Install Simple OpenNI:
 
@@ -21,15 +23,13 @@ If you have a 64-bit machine, you probably want to download the "Windows (withou
 
 If you've got everything working, run Processing, then go to File->Open and open "vigo.pde" from this repository. Hit the Play button, or go to Sketch->Run, and it should "just work".
 
-
-== Full screen mode ==
+# Full screen mode
 
 In Processing, there is a "Present" mode needed to run a sketch full screen. You can either go to Sketch->Present in the menu, or go to File->Export Application..., and check the box about Present mode to export a standalone executable that will run fullscreen.
 
 In Windows 7, full screen mode will only run on the monitor designated as "primary", so if you need to change this, go to the "Adjust screen resolution" settings dialog.
 
-
-== License ==
+# License
 
 Created by Eric Mill for the Sunlight Foundation, October 2011.
 

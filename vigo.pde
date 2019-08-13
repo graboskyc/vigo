@@ -9,16 +9,52 @@
 // Code released under a CC Zero (public domain) license:
 // http://creativecommons.org/publicdomain/zero/1.0/
 
-// Included images derive from the wallpaper of Vigo the Carpathian found here, licensing status unclear:
-// http://www.goodfon.com/wallpaper/92399.html
-
-
 import SimpleOpenNI.*;
 SimpleOpenNI  kinect;
 
+class StopWatchTimer { 
+  int startTime = 0;
+  boolean evil = false;
+
+    void start() { 
+        startTime = millis(); 
+        evil = false;
+    } 
+
+    void reset() { 
+        startTime = millis();
+    } 
+
+    int getElapsedTime() { 
+        int elapsed; 
+        elapsed = (millis() - startTime); 
+        return elapsed; 
+    } 
+
+    int getSec(){ 
+      return (getElapsedTime() / 1000) % 60; 
+    } 
+    
+    void swapImg() {
+      evil = !evil;
+    }
+    
+    boolean isEvil() {
+      return evil;
+    }
+} 
+
 // display resolution of the screen (adjust for your own display)
-int screenWidth = 1920;
-int screenHeight = 1080;
+int screenWidth = 1280;
+int screenHeight = 1024;
+
+// number of people before triggering red eyes
+int redEyeCount = 2;
+
+// how long before swaping image in sec
+int swapEvery =360;
+// how long to keep it flashed in sec
+int keepFor = 1;
 
 // size of Kinect's depth map
 int width = 640;
@@ -49,7 +85,7 @@ int lidRightY = 493;
 float leftX = 770;
 float leftY = 553;
 float rightX = 1008;
-float rightY = 528;
+float rightY = 540;
 
 // center point of iris for left and right eyes, in the context of their respective image files
 float leftEyeCenterX = 78;
@@ -61,26 +97,35 @@ float rightEyeCenterY = 62;
 PVector target;
 int targetId;
 
-PImage painting, leftEye, rightEye, leftLid, rightLid;
+PImage painting, leftEye, rightEye, leftLid, rightLid, leftRed, rightRed, paintingevil, paintinggood;
+
+StopWatchTimer swt = new StopWatchTimer(); 
 
 
 void setup() {
   size(screenWidth, screenHeight);
   
-  painting = loadImage("data/vigo.png");
+  paintinggood = loadImage("data/vigo.png");
   leftEye = loadImage("data/vigo-left.png");
+  leftRed = loadImage("data/vigo-left-red.png");
   rightEye = loadImage("data/vigo-right.png");
   leftLid = loadImage("data/eye-left.png");
+  rightRed = loadImage("data/vigo-right-red.png");
   rightLid = loadImage("data/eye-right.png");
+  paintingevil = loadImage("data/vigo_evil.png");
+  
+  painting = paintinggood;
   
   kinect = new SimpleOpenNI(this);
   kinect.enableDepth();
   
   // not using any skeleton tracking
-  kinect.enableUser(SimpleOpenNI.SKEL_PROFILE_NONE);
+  kinect.enableUser();
   
   // mirror the data
   kinect.setMirror(true);
+  
+  swt.start();
 }
 
 
@@ -144,11 +189,31 @@ void draw() {
     leftEye(target);
     rightEye(target);
   }
+  
+  if(target != null) {
+    if (swt.getSec() > swapEvery) {
+      painting = paintingevil;
+      if(swt.getSec() > (swapEvery + keepFor)) {
+        swt.reset();
+        painting = paintinggood;
+      }
+    }
+  }
+  else {
+    swt.reset();
+  }
+  
+  
 }
 
 
 void leftEye(PVector target) {
   float pupilPosition;
+  IntVector userList = new IntVector();
+  kinect.getUsers(userList);
+  PImage eyeToUse = leftEye;
+  if (userList.size() > redEyeCount)
+    eyeToUse = leftRed;
   
   // if there's a target, map the person's position on the screen to the corresponding pupil position on the track
   if (target != null)
@@ -166,7 +231,7 @@ void leftEye(PVector target) {
   float pupilTop = leftY - leftEyeCenterY;
   
   // draw the eye in its final position
-  image(leftEye, pupilLeft + pupilOffset, pupilTop);
+  image(eyeToUse, pupilLeft + pupilOffset, pupilTop);
   
   // if debug mode's on, draw the big red eye on top of all of this
   if (debug)
@@ -175,7 +240,12 @@ void leftEye(PVector target) {
 
 void rightEye(PVector target) {
   float pupilPosition;
-  
+  IntVector userList = new IntVector();
+  kinect.getUsers(userList);
+  PImage eyeToUse = leftEye;
+  if (userList.size() > redEyeCount)
+    eyeToUse = rightRed;
+    
   // if there's a target, map the person's position on the screen to the corresponding pupil position on the track
   if (target != null)
     pupilPosition = map(target.x, 0, width, 0 + pupilBufferRight, eyeWidth - pupilBufferRight);
@@ -192,7 +262,7 @@ void rightEye(PVector target) {
   float pupilTop = rightY - rightEyeCenterY;
   
   // draw the eye in its final position
-  image(rightEye, pupilLeft + pupilOffset, pupilTop);
+  image(eyeToUse, pupilLeft + pupilOffset, pupilTop);
   
   // if debug mode's on, draw the big red eye on top of all of this
   if (debug)
@@ -242,4 +312,6 @@ PVector centerFor(int userId) {
 void keyPressed() {
   if (keyCode == UP)
    debug = !debug; 
+  if (keyCode == DOWN)
+    painting = paintingevil;
 }
